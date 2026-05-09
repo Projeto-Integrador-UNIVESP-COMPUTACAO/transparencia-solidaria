@@ -16,7 +16,13 @@ pipx install poetry
 ```bash
 poetry install
 ```
-5. Rode a aplicação:
+5. Crie um arquivo `.env` na raiz do projeto contendo as seguintes variáveis de ambiente:
+```
+DB_USER=seu_usuario
+DB_PASSWORD=sua_senha
+```
+6. Instale o banco de dados [postgre](https://www.postgresql.org/download/).
+7. Rode a aplicação:
 ```bash
 poetry run fastapi dev main.py
 ```
