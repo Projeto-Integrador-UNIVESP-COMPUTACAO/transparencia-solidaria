@@ -14,20 +14,29 @@ pip install pipx
 ```bash
 pipx install poetry
 ```
-4. Instale a aplicação:
+4. Crie uma pasta `.venv` na raiz de seu projeto ou rode o comando abaixo. Essa pasta abrigará seu ambiente virtual.
+```bash
+poetry config virtualenvs.in-project true --local
+```
+- Caso prefira que essa configuração seja aplicada globalmente:
+```bash
+poetry config virtualenvs.in-project true
+```
+5. Instale a aplicação:
 ```bash
 poetry install
 ```
-5. Crie um arquivo `.env` na raiz do projeto contendo as seguintes variáveis de ambiente:
+6. Crie um arquivo `.env` na raiz do projeto contendo as seguintes variáveis de ambiente:
 ```
 DB_USER=seu_usuario
 DB_PASSWORD=sua_senha
 ```
-6. Instale o banco de dados [postgre](https://www.postgresql.org/download/).
-7. Rode a aplicação:
+7. Instale o banco de dados [postgre](https://www.postgresql.org/download/).
+8. Rode a aplicação:
 ```bash
 poetry run fastapi dev main.py
 ```
+⚠️ A aplicação não estará funcionando completamente. Crie as tabelas necessárias no banco e popule usando a consulta citada abaixo.
 
 ## Banco de dados
 - Rode o script em `create_base.py` para criar as tabelas no banco de dados (postgre).
