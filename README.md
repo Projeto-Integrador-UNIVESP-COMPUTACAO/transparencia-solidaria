@@ -1,6 +1,8 @@
 # Transparência solidária
 - Portal foi pensado para que entidades beneficentes cadastrem itens necessários, divulguem estoques atuais e níveis ideais, enquanto doadores consultam essas informações de forma prática e objetiva.
 
+![screen record](media/screen_record.gif)
+
 
 ## Para rodar o projeto como desenvolvedor:
 1. Instale uma versão de python (preferencialmente >= 3.13, < 4.0);
