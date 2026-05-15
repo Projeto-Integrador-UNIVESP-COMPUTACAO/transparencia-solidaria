@@ -5,15 +5,21 @@
         <div class="collapse navbar-collapse justify-content-between align-items-lg-center mt-3 mt-lg-0"
             id="menuPrincipal">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
-                <li class="nav-item"><a class="nav-link app-link" href="{{ url_for('index') }}">Início</a>
+                <li class="nav-item">
+                    <a class="nav-link app-link {{ 'active' if request.endpoint == 'index' }}"
+                        href="{{ url_for('index') }}">Início</a>
                 </li>
-                <li class="nav-item"><a class="nav-link app-link active" href="./template-pagina.html">Template</a></li>
-                <li class="nav-item"><a class="nav-link app-link" href="#bloco-principal">Conteúdo</a></li>
-                <li class="nav-item"><a class="nav-link app-link" href="#acoes">Ações</a></li>
+                <li class="nav-item">
+                    <a class="nav-link app-link {{ 'active' if request.endpoint == 'entidade_lista' }}"
+                        href="{{ url_for('entidade_lista') }}">Entidades</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link app-link {{ 'active' if request.endpoint == 'estoque_lista' }}"
+                        href="{{ url_for('estoque_lista') }}">Estoque</a>
+                </li>
             </ul>
-
             <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
-                <a class="btn btn-app btn-primary-app" href="#acoes">Ação principal</a>
+                <a class="btn btn-app btn-primary-app" href="#bloco-principal">Ver lista</a>
             </div>
         </div>
     </div>

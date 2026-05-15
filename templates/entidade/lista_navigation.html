@@ -6,15 +6,16 @@
             id="menuPrincipal">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                 <li class="nav-item">
-                    <a class="nav-link app-link" href="{{ url_for('index') }}">Início</a>
+                    <a class="nav-link app-link {{ 'active' if request.endpoint.startswith == '/index' }}"
+                        href="{{ url_for('index') }}">Início</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link app-link active" href="{{ url_for('entidade_lista') }}">
-                        Entidades
-                    </a>
+                    <a class="nav-link app-link {{ 'active' if request.endpoint.startswith == '/entidade_lista' }}"
+                        href="{{ url_for('entidade_lista') }}">Entidades</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link app-link" href="{{ url_for('estoque_lista') }}">Estoque</a>
+                    <a class="nav-link app-link {{ 'active' if request.endpoint.startswith == '/estoque_lista' }}"
+                        href="{{ url_for('estoque_lista') }}">Estoque</a>
                 </li>
             </ul>
             <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">

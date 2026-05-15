@@ -78,7 +78,7 @@
 
 <section id="necessidades">
     <div class="container-app">
-        <div class="row g-4 align-items-end mb-4">
+        <div class="row g-4 align-self-start mb-4">
             <div class="col-lg-8">
                 <span class="section-kicker mb-3">Níveis atualizados</span>
                 <h2 class="section-title mb-3">Itens que precisam de atenção imediata.</h2>
@@ -88,60 +88,75 @@
             </div>
         </div>
         <div class="row g-4">
-            <div class="col-lg-6">
+            {% if entidade_destaque %}
+            <div class="col-lg-6 align-self-start">
                 <article class="entity-card h-100">
                     <div class="entity-card-header">
                         <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
                             <div>
-                                <h3 class="h4 mb-2">Casa Esperança</h3>
+                                <h3 class="h4 mb-2">{{ entidade_destaque.nome }}</h3>
                                 <div class="entity-meta">
-                                    <span><i class="bi bi-geo-alt"></i> São Bernardo do Campo</span>
-                                    <span><i class="bi bi-box-seam"></i> Estoque atualizado hoje</span>
+                                    <span><i class="bi bi-geo-alt"></i> {{ entidade_destaque.cidade.nome }}</span>
+                                    <span><i class="bi bi-box-seam"></i>
+                                        {% if itens_criticos %}
+                                        Estoque atualizado em
+                                        {{ itens_criticos[0].atualizado_em.strftime('%d/%m/%Y') }}
+                                        {% endif %}
+                                    </span>
                                 </div>
                             </div>
                             <span class="status-chip status-danger">Em falta</span>
                         </div>
-                        <p class="mb-0">Instituição com necessidade prioritária de arroz, leite em pó e produtos de
-                            higiene.</p>
+                        <p class="mb-0">
+                            Entidade com {{ itens_criticos|length }} item(ns) em situação crítica de estoque.
+                        </p>
                     </div>
                     <div class="entity-card-body">
+                        {% for item in itens_criticos %}
+                        {% set pct = item.percentual_estoque %}
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span>Arroz 5kg</span>
-                            <strong>20%</strong>
+                            <span>{{ item.produto }}</span>
+                            <strong>{{ pct }}%</strong>
                         </div>
-                        <div class="progress-track mb-4">
-                            <div class="progress-fill danger" style="width:20%"></div>
+                        <div class="progress-track {% if not loop.last %}mb-4{% endif %}">
+                            <div class="progress-fill
+                                    {% if pct < 25 %}danger
+                                    {% elif pct < 60 %}warning
+                                    {% endif %}" style="width: {{ pct }}%">
+                            </div>
                         </div>
-
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span>Leite em pó</span>
-                            <strong>35%</strong>
-                        </div>
-                        <div class="progress-track mb-4">
-                            <div class="progress-fill warning" style="width:35%"></div>
-                        </div>
-
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span>Sabonete</span>
-                            <strong>55%</strong>
-                        </div>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width:55%"></div>
-                        </div>
+                        {% endfor %}
                     </div>
                     <div class="section-actions">
-                        <a class="btn btn-app btn-outline-app" href="{{ url_for('estoque_lista') }}">Listar estoques</a>
+                        <a class="btn btn-app btn-outline-app" href="{{ url_for('estoque_lista') }}">
+                            Listar estoques
+                        </a>
                     </div>
                 </article>
-
             </div>
+            {% else %}
             <div class="col-lg-6">
+                <article class="entity-card h-100 d-flex align-items-center justify-content-center">
+                    <p class="text-muted">Nenhuma entidade com itens críticos no momento.</p>
+                </article>
+            </div>
+            {% endif %}
+            <div class="col-lg-6 align-self-start">
                 <article class="highlight-card h-100 d-flex flex-column justify-content-between">
                     <div>
-                        <span class="status-chip status-warning mb-3">Estoque baixo</span>
-                        <h3 class="h4 mb-3">Priorização visual por níveis de estoque</h3>
-                        <p>O sistema pode divulgar estoques atuais e níveis ideais para ajudar o doador a
-                            identificar rapidamente o que está mais próximo da ruptura. </p>
+                        {% if itens_criticos %}
+                        {% set pior = itens_criticos[0] %}
+                        {% if pior.percentual_estoque < 25 %} <span class="status-chip status-danger mb-3">Estoque
+                            crítico</span>
+                            {% else %}
+                            <span class="status-chip status-warning mb-3">Estoque baixo</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="status-chip status-success mb-3">Estoque adequado</span>
+                            {% endif %}
+                            <h3 class="h4 mb-3">Priorização visual por níveis de estoque</h3>
+                            <p>O sistema pode divulgar estoques atuais e níveis ideais para ajudar o doador a
+                                identificar rapidamente o que está mais próximo da ruptura.</p>
                     </div>
                     <div class="app-table-wrap mt-4">
                         <div class="table-responsive">
@@ -154,30 +169,155 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    {% for item in itens_criticos %}
                                     <tr>
-                                        <td>Feijão</td>
-                                        <td><span class="status-chip status-warning">Baixo</span></td>
-                                        <td>48/100</td>
+                                        <td>{{ item.produto }}</td>
+                                        <td>
+                                            {% if item.status == 'critico' %}
+                                            <span class="status-chip status-danger">Crítico</span>
+                                            {% elif item.status == 'baixo' %}
+                                            <span class="status-chip status-warning">Baixo</span>
+                                            {% else %}
+                                            <span class="status-chip status-success">Adequado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ item.quantidade_atual|int }}/{{ item.quantidade_necessaria|int }}</td>
                                     </tr>
+                                    {% else %}
                                     <tr>
-                                        <td>Óleo</td>
-                                        <td><span class="status-chip status-danger">Crítico</span></td>
-                                        <td>12/60</td>
+                                        <td colspan="3" class="text-muted text-center">Nenhum item crítico.</td>
                                     </tr>
-                                    <tr>
-                                        <td>Macarrão</td>
-                                        <td><span class="status-chip status-success">Adequado</span></td>
-                                        <td>82/100</td>
-                                    </tr>
+                                    {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </article>
             </div>
+
         </div>
     </div>
 </section>
+
+<!-- <section id="necessidades">
+    <div class="container-app">
+        <div class="row g-4 align-items-end mb-4">
+            <div class="col-lg-8">
+                <h2 class="section-title mb-3">Itens que precisam de atenção imediata</h2>
+                <p class="mb-0">A proposta do sistema é apoiar o monitoramento de estoque de alimentos e
+                    itens não perecíveis para tornar a reposição mais ágil entre entidades e doadores.
+                </p>
+            </div>
+        </div>
+        <div class="row g-4">
+            {% if entidade_destaque %}
+            <div class="col-lg-6">
+                <article class="entity-card h-100">
+                    <div class="entity-card-header">
+                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                            <div>
+                                <h3 class="h4 mb-2">{{ entidade_destaque.nome }}</h3>
+                                <div class="entity-meta">
+                                    <span><i class="bi bi-geo-alt"></i> {{ entidade_destaque.cidade.nome }}</span>
+                                    <span><i class="bi bi-box-seam"></i>
+                                        {% if itens_criticos %}
+                                        Estoque atualizado em
+                                        {{ itens_criticos[0].atualizado_em.strftime('%d/%m/%Y') }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="status-chip status-danger">Em falta</span>
+                        </div>
+                        <p class="mb-0">
+                            Entidade com {{ itens_criticos|length }} item(ns) em situação crítica de estoque.
+                        </p>
+                    </div>
+                    <div class="entity-card-body">
+                        {% for item in itens_criticos %}
+                        {% set pct = item.percentual_estoque %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ item.produto }}</span>
+                            <strong>{{ pct }}%</strong>
+                        </div>
+                        <div class="progress-track {% if not loop.last %}mb-4{% endif %}">
+                            <div class="progress-fill
+                        {% if pct < 25 %}danger
+                        {% elif pct < 60 %}warning
+                        {% endif %}" style="width: {{ pct }}%">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="section-actions">
+                        <a class="btn btn-app btn-outline-app" href="{{ url_for('estoque_lista') }}">
+                            Listar estoques
+                        </a>
+                    </div>
+                </article>
+            </div>
+            {% else %}
+            <div class="col-lg-6">
+                <article class="entity-card h-100 d-flex align-items-center justify-content-center">
+                    <p class="text-muted">Nenhuma entidade com itens críticos no momento.</p>
+                </article>
+            </div>
+            {% endif %}
+            <article class="highlight-card h-100 d-flex flex-column justify-content-between">
+                <div>
+                    {% if itens_criticos %}
+                    {% set pior = itens_criticos[0] %}
+                    {% if pior.percentual_estoque < 25 %} <span class="status-chip status-danger mb-3">Estoque
+                        crítico</span>
+                        {% else %}
+                        <span class="status-chip status-warning mb-3">Estoque baixo</span>
+                        {% endif %}
+                        {% else %}
+                        <span class="status-chip status-success mb-3">Estoque adequado</span>
+                        {% endif %}
+                        <h3 class="h4 mb-3">Priorização visual por níveis de estoque</h3>
+                        <p>O sistema pode divulgar estoques atuais e níveis ideais para ajudar o doador a
+                            identificar rapidamente o que está mais próximo da ruptura.</p>
+                </div>
+                <div class="app-table-wrap mt-4">
+                    <div class="table-responsive">
+                        <table class="table table-app align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Status</th>
+                                    <th>Meta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in itens_criticos %}
+                                <tr>
+                                    <td>{{ item.produto }}</td>
+                                    <td>
+                                        {% if item.status == 'critico' %}
+                                        <span class="status-chip status-danger">Crítico</span>
+                                        {% elif item.status == 'baixo' %}
+                                        <span class="status-chip status-warning">Baixo</span>
+                                        {% else %}
+                                        <span class="status-chip status-success">Adequado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.quantidade_atual|int }}/{{ item.quantidade_necessaria|int }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-muted text-center">Nenhum item crítico.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+    </div>
+</section> -->
 
 <section id="entidades">
     <div class="container-app">
@@ -185,9 +325,11 @@
             <div class="col-lg-5">
                 <span class="section-kicker mb-3">Gestão e transparência</span>
                 <h2 class="section-title mb-3">Veja as entidades presentes na nossa rede do bem</h2>
-                <p class="mb-4">No <strong>Estoque Solidário</strong> as entidades podem se cadastrar para ter acesso à rede de doadores e controlar seus estoques.</p>
+                <p class="mb-4">No <strong>Estoque Solidário</strong> as entidades podem se cadastrar para ter acesso à
+                    rede de doadores e controlar seus estoques.</p>
                 <div class="section-actions">
-                    <a class="btn btn-app btn-outline-app" href="{{ url_for('entidade_lista') }}">Entidades cadastradas</a>
+                    <a class="btn btn-app btn-outline-app" href="{{ url_for('entidade_lista') }}">Entidades
+                        cadastradas</a>
                 </div>
             </div>
             <div class="col-lg-7">
@@ -196,28 +338,32 @@
                         <article class="info-card h-100">
                             <div class="card-icon"><i class="bi bi-bounding-box"></i></div>
                             <h3 class="h5 mb-3">Benefício para entidades</h3>
-                            <p class="mb-0">Após a aporvação do cadastro, as entidades podem manter um controle simples de seus estoques.</p>
+                            <p class="mb-0">Após a aporvação do cadastro, as entidades podem manter um controle simples
+                                de seus estoques.</p>
                         </article>
                     </div>
                     <div class="col-md-6">
                         <article class="info-card h-100">
                             <div class="card-icon"><i class="bi bi-bar-chart-line"></i></div>
                             <h3 class="h5 mb-3">Monitoramento dos estoques</h3>
-                            <p class="mb-0">Os dados podem ser inseridos diretamente na plataforma ou através de uma planilha eletrônica.</p>
+                            <p class="mb-0">Os dados podem ser inseridos diretamente na plataforma ou através de uma
+                                planilha eletrônica.</p>
                         </article>
                     </div>
                     <div class="col-md-6">
                         <article class="info-card h-100">
                             <div class="card-icon"><i class="bi bi-person-heart"></i></div>
                             <h3 class="h5 mb-3">Benefício para doadores</h3>
-                            <p class="mb-0">Todas as entidades cadastradas passam por um processo de avaliação para garantir a idoneidade dentro de nossa rede.</p>
+                            <p class="mb-0">Todas as entidades cadastradas passam por um processo de avaliação para
+                                garantir a idoneidade dentro de nossa rede.</p>
                         </article>
                     </div>
                     <div class="col-md-6">
                         <article class="info-card h-100">
                             <div class="card-icon"><i class="bi bi-exclamation-square"></i></div>
                             <h3 class="h5 mb-3">Estoques baixos</h3>
-                            <p class="mb-0">Quando os estoques estão baixos, a rede de doadores é avisada, trazendo maior agilidade e segurança para as entidades da rede.</p>
+                            <p class="mb-0">Quando os estoques estão baixos, a rede de doadores é avisada, trazendo
+                                maior agilidade e segurança para as entidades da rede.</p>
                         </article>
                     </div>
                 </div>

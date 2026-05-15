@@ -1,8 +1,8 @@
-from sqlalchemy import select, case
+from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from transparencia_solidaria.models.estoque_model import Entidade, ItemEstoque
+from transparencia_solidaria.models.estoque_model import Entidade, ItemEstoque, Cidade
 
 
 async def buscar_itens(
@@ -60,8 +60,8 @@ async def buscar_itens(
     db: AsyncSession,
     categoria: str | None = None,
     entidade_id: int | None = None,
-    ordenar_por: str = 'id',
-    ordem: str = 'desc',
+    ordenar_por: str = "id",
+    ordem: str = "desc",
     skip: int = 0,
     limit: int = 20,
 ):
@@ -72,15 +72,15 @@ async def buscar_itens(
     )
 
     colunas_ordenacao = {
-        'id': ItemEstoque.id,
-        'produto': ItemEstoque.produto,
-        'categoria': ItemEstoque.categoria,
-        'quantidade_atual': ItemEstoque.quantidade_atual,
-        'quantidade_necessaria': ItemEstoque.quantidade_necessaria,
-        'unidade': ItemEstoque.unidade,
-        'atualizado_em': ItemEstoque.atualizado_em,
-        'entidade': Entidade.nome,
-        'status': status_ordenacao,
+        "id": ItemEstoque.id,
+        "produto": ItemEstoque.produto,
+        "categoria": ItemEstoque.categoria,
+        "quantidade_atual": ItemEstoque.quantidade_atual,
+        "quantidade_necessaria": ItemEstoque.quantidade_necessaria,
+        "unidade": ItemEstoque.unidade,
+        "atualizado_em": ItemEstoque.atualizado_em,
+        "entidade": Entidade.nome,
+        "status": status_ordenacao,
     }
 
     coluna = colunas_ordenacao.get(ordenar_por, ItemEstoque.id)
@@ -97,7 +97,7 @@ async def buscar_itens(
     if entidade_id:
         stmt = stmt.where(ItemEstoque.entidade_id == entidade_id)
 
-    if ordem == 'asc':
+    if ordem == "asc":
         stmt = stmt.order_by(coluna.asc())
     else:
         stmt = stmt.order_by(coluna.desc())
@@ -106,3 +106,44 @@ async def buscar_itens(
 
     result = await db.execute(stmt)
     return result.scalars().all()
+
+
+async def get_entidade_mais_critica(db: AsyncSession):
+    percentual = case(
+        (ItemEstoque.quantidade_necessaria == 0, 100.0),
+        else_=(ItemEstoque.quantidade_atual / ItemEstoque.quantidade_necessaria * 100),
+    )
+
+    # Subquery: entidade com mais itens críticos
+    subq = (
+        select(ItemEstoque.entidade_id, func.count().label("qtd_criticos"))
+        .where(percentual < 25)
+        .group_by(ItemEstoque.entidade_id)
+        .order_by(func.count().desc())
+        .limit(1)
+        .subquery()
+    )
+
+    # Busca a entidade já carregando cidade e cidade.estado
+    stmt_entidade = (
+        select(Entidade)
+        .join(subq, Entidade.id == subq.c.entidade_id)
+        .options(selectinload(Entidade.cidade).selectinload(Cidade.estado))
+    )
+    result = await db.execute(stmt_entidade)
+    entidade = result.scalars().first()
+
+    if not entidade:
+        return None, []
+
+    # Busca os 3 itens mais críticos dessa entidade
+    stmt_itens = (
+        select(ItemEstoque)
+        .where(ItemEstoque.entidade_id == entidade.id)
+        .order_by(percentual.asc())
+        .limit(3)
+    )
+    result_itens = await db.execute(stmt_itens)
+    itens = result_itens.scalars().all()
+
+    return entidade, itens
